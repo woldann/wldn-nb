@@ -9,6 +9,7 @@ set -e
 USERNAME="serkan"
 FULL_NAME="Serkan Aksoy"
 USER_EMAIL="serkanaksy@pm.me"
+GPG_COMMENT="GitHub"
 HOSTNAME="wldn-nb"
 DOMAIN="woldan.me"
 TIMEZONE="Europe/Istanbul"
@@ -159,6 +160,13 @@ run_as_user ssh-keygen -t ed25519 -f /home/"$USERNAME"/.ssh/woldann_github -C "$
 run_as_user git config --global user.email "$USER_EMAIL"
 run_as_user git config --global user.name "$FULL_NAME"
 run_as_user git config --global init.defaultBranch main
+
+# GPG Key Generation & Git Signing
+# Creates an RSA 4096-bit key using the system password as passphrase
+run_as_user gpg --batch --passphrase "$PASSWORD" --pinentry-mode loopback --quick-generate-key "$FULL_NAME ($GPG_COMMENT) <$USER_EMAIL>" rsa4096 sign,auth,encr never
+GPG_KEY_ID=\$(run_as_user gpg --list-secret-keys --keyid-format LONG "$USER_EMAIL" | grep sec | head -n 1 | awk '{print \$2}' | cut -d'/' -f2)
+run_as_user git config --global user.signingkey "\$GPG_KEY_ID"
+run_as_user git config --global commit.gpgsign true
 
 run_as_user tee /home/"$USERNAME"/.ssh/config <<EOT
 Host github.com
